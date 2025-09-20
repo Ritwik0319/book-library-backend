@@ -1,0 +1,26 @@
+[
+  {
+    "id": "5153c025-fd65-4763-9ff0-7561d761c519",
+    "title": "random 1",
+    "author": "author 1",
+    "price": 300
+  },
+  {
+    "id": "ea484315-dc37-468c-a8b1-eae3960bf51a",
+    "title": "random changed title",
+    "author": "changed author 3",
+    "price": 1900
+  },
+  {
+    "id": "68384363-2253-455d-95eb-0db731b072ef",
+    "title": "dummy from ui",
+    "author": "ui dummy",
+    "price": "123"
+  },
+  {
+    "id": "7c8d419c-f411-47a8-b7f9-770ad9e13326",
+    "title": "dummy from uiiii",
+    "author": "ui author",
+    "price": "123"
+  }
+]
