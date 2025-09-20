@@ -71,27 +71,32 @@ app.post("/postbook", async (req, res) => {
 });
 
 // 5. Modify or edit book by id
-app.patch("/updatebook/:id", async (req, res) => {
+app.patch("/books/:id", async (req, res) => {
   const { id } = req.params;
   const { title, author, price } = req.body;
   try {
-    const data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
-    const index = data.findIndex((book) => book.id === id);
-    if (index === -1) {
-      return res.status(404).json({ message: "no book found" });
+    let data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
+    let found = false;
+
+    data = data.map((book) => {
+      if (book.id === id) {
+        found = true;
+        return {
+          ...book,
+          title: title || book.title,
+          author: author || book.author,
+          price: price || book.price,
+        };
+      }
+      return book;
+    });
+
+    if (!found) {
+      return res.status(404).json({ message: "book not found" });
     }
 
-    const existing = data[index];
-    const updated = {
-      ...existing,
-      title: title !== undefined ? title : existing.title,
-      author: author !== undefined ? author : existing.author,
-      price: price !== undefined ? price : existing.price,
-    };
-
-    data[index] = updated;
     await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
-    res.json({ message: "book modified", book: updated });
+    res.json({ message: "book modified", id });
   } catch (error) {
     res.status(500).json({ message: "internal server error" });
   }
