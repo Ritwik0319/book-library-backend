@@ -71,7 +71,7 @@ app.post("/books", async (req, res) => {
 });
 
 // 5. Modify or edit book by id
-app.patch("/books/:id", async (req, res) => {
+app.patch("/updatebook/:id", async (req, res) => {
   const { id } = req.params;
   const { title, author, price } = req.body;
 
@@ -104,7 +104,7 @@ app.patch("/books/:id", async (req, res) => {
 });
 
 // 6. Delete book by id
-app.delete("/books/:id", async (req, res) => {
+app.delete("/deletebooks/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
