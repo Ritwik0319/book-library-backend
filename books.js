@@ -1,123 +1,128 @@
 const express = require("express");
-const path = require("path");
 const cors = require("cors");
-const { json } = require("stream/consumers");
 const fs = require("fs").promises;
-const uuid = require("uuid").v4;
+const { v4: uuid } = require("uuid");
 
 const app = express();
+const PORT = 5000;
+const DATA_FILE = "./data/books.json";
+
+// Middlewares
 app.use(express.json());
-app.use(express.urlencoded());
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 
-// 1.default api
-
+// 1. Default API
 app.get("/", (req, res) => {
-  res.json({ message: "serever running healthy" });
+  res.json({ message: "server running healthy" });
 });
 
-// 2.get books
+// 2. Get all books
 app.get("/books", async (req, res) => {
   try {
-    const data = JSON.parse(await fs.readFile("./data/books.json"));
-    console.log(data);
+    const data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
     res.json(data);
   } catch (error) {
-    res.json({ message: "internal server error" });
+    res.status(500).json({ message: "internal server error" });
   }
 });
 
-// 3.get books by id
+// 3. Get book by id
 app.get("/books/:id", async (req, res) => {
   try {
-    const data = JSON.parse(await fs.readFile("./data/books.json")).filter(
-      (book) => book.id == req.params.id
-    );
-    if (data.length > 0) {
-      res.json(data);
+    const data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
+    const book = data.find((book) => book.id === req.params.id);
+
+    if (book) {
+      res.json(book);
     } else {
-      res.json({ message: "no data found" });
+      res.status(404).json({ message: "no data found" });
     }
   } catch (error) {
-    res.json({ message: "internal server error" });
+    res.status(500).json({ message: "internal server error" });
   }
 });
 
-// 4.post a new book
-app.post("/post", async (req, res) => {
-  console.log(req.body);
+// 4. Post a new book
+app.post("/books", async (req, res) => {
   const { title, author, price } = req.body;
-  const newBook = {
-    id: uuid(),
-    title,
-    author,
-    price,
-  };
+
+  if (!title || !author || !price) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
+  const newBook = { id: uuid(), title, author, price };
+
   try {
-    const data = JSON.parse(await fs.readFile("./data/books.json"));
-    const some = await data.find((book) => book.title == title);
-    console.log(some);
-    if (!some) {
-      data.push(newBook);
-      await fs.writeFile("./data/books.json", JSON.stringify(data));
-      console.log(data);
-      res.json({ message: "added new book", book: newBook });
-    } else {
-      res.json({ message: "book exists" });
+    const data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
+    const exists = data.find((book) => book.title === title);
+
+    if (exists) {
+      return res.status(400).json({ message: "book already exists" });
     }
+
+    data.push(newBook);
+    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
+
+    res.status(201).json({ message: "added new book", book: newBook });
   } catch (error) {
-    res.status(500).json({ message: "internal server eror" });
+    res.status(500).json({ message: "internal server error" });
   }
 });
 
-// 5.modify or edit any book using id
-app.patch("/editbook/:id", async (req, res) => {
-  console.log(req.params);
-  console.log(req.body);
-
+// 5. Modify or edit book by id
+app.patch("/books/:id", async (req, res) => {
   const { id } = req.params;
   const { title, author, price } = req.body;
 
   try {
-    const data = JSON.parse(await fs.readFile("./data/books.json")).map(
-      (book) => {
-        if (book.id == id) {
-          return {
-            ...book,
-            title: title || book.title,
-            author: author || book.author,
-            price: price || book.price,
-          };
-        }
-        return book;
+    let data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
+    let found = false;
+
+    data = data.map((book) => {
+      if (book.id === id) {
+        found = true;
+        return {
+          ...book,
+          title: title || book.title,
+          author: author || book.author,
+          price: price || book.price,
+        };
       }
-    );
-    await fs.writeFile("./data/books.json", JSON.stringify(data));
-    console.log(data);
+      return book;
+    });
+
+    if (!found) {
+      return res.status(404).json({ message: "book not found" });
+    }
+
+    await fs.writeFile(DATA_FILE, JSON.stringify(data, null, 2));
     res.json({ message: "book modified", id });
   } catch (error) {
-    res.status(500).json({ message: "internal server eror" });
+    res.status(500).json({ message: "internal server error" });
   }
 });
 
-// 6.dlete a book using id
-app.delete("/deletebook/:id", async (req, res) => {
-  console.log(req.params);
+// 6. Delete book by id
+app.delete("/books/:id", async (req, res) => {
   const { id } = req.params;
+
   try {
-    const data = JSON.parse(await fs.readFile("./data/books.json"));
-    const some = await data.some((book) => book.id == id);
-    console.log(some);
-    if (some) {
-      const updatedData = await data.filter((book) => book.id !== id);
-      await fs.writeFile("./data/books.json", JSON.stringify(updatedData));
-      res.json({ message: "book deleted" });
-    } else {
-      res.json({ message: "no book found" });
+    const data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
+    const book = data.find((book) => book.id === id);
+
+    if (!book) {
+      return res.status(404).json({ message: "no book found" });
     }
+
+    const updatedData = data.filter((book) => book.id !== id);
+    await fs.writeFile(DATA_FILE, JSON.stringify(updatedData, null, 2));
+
+    res.json({ message: "book deleted", deletedBook: book });
   } catch (error) {
-    res.status(500).json({ message: "internal server eror" });
+    res.status(500).json({ message: "internal server error" });
   }
 });
 
-app.listen(5000, () => console.log("server is running at port 5000"));
+// Start server
+app.listen(PORT, () => console.log(`server is running at port ${PORT}`));
