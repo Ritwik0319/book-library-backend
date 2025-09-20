@@ -28,7 +28,7 @@ app.get("/books", async (req, res) => {
 });
 
 // 3. Get book by id
-app.get("/books/:id", async (req, res) => {
+app.get("/book/:id", async (req, res) => {
   try {
     const data = JSON.parse(await fs.readFile(DATA_FILE, "utf-8"));
     const book = data.find((book) => book.id === req.params.id);
@@ -44,7 +44,7 @@ app.get("/books/:id", async (req, res) => {
 });
 
 // 4. Post a new book
-app.post("/books", async (req, res) => {
+app.post("/postbook", async (req, res) => {
   const { title, author, price } = req.body;
 
   if (!title || !author || !price) {
