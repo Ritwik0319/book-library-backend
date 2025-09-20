@@ -104,7 +104,7 @@ app.patch("/updatebook/:id", async (req, res) => {
 });
 
 // 6. Delete book by id
-app.delete("/deletebooks/:id", async (req, res) => {
+app.delete("/deletebook/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
